@@ -1,0 +1,37 @@
+{
+  "name": "hubot-aoj-status",
+  "description": "A hubot script that watch judge results on AOJ",
+  "version": "0.0.0",
+  "author": "Katsuyuki Tateishi <kt@wheel.jp>",
+  "license": "MIT",
+  "keywords": [
+    "hubot",
+    "hubot-scripts",
+    "aoj"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ktateish/hubot-aoj-status.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ktateish/hubot-aoj-status/issues"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6",
+    "ws": "^0.7.1"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "chai": "*",
+    "sinon-chai": "*",
+    "sinon": "*",
+    "grunt-mocha-test": "~0.7.0",
+    "grunt-release": "~0.6.0",
+    "matchdep": "~0.1.2",
+    "grunt-contrib-watch": "~0.5.3"
+  },
+  "main": "index.coffee",
+  "scripts": {
+    "test": "grunt test"
+  }
+}
