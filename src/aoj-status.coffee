@@ -10,6 +10,7 @@
 # Author:
 #   Katsuyuki Tateishi[kt@wheel.jp]
 
+debug = require('debug')('hubot-aoj-status')
 ws = require('ws')
 
 logger = () ->	# will be robot.logger
@@ -63,11 +64,14 @@ aoj_onopen = () ->
   aoj_pingloop()
 
 aoj_connect = () ->
+  debug('connecting to ionazn.org (AOJ status site)')
   aoj = new ws('ws://ionazn.org/status')
+  debug('registering on action')
   aoj.on 'message', (data, flags) ->
     s = JSON.parse(data)
     id = s.userID
     rc = aoj_status[s.status]
+    debug("#{id}'s status(=#{rc}) has come")
     if rc == 'Waiting' || rc == 'Running'
       return
     sendmsg = (res) ->
@@ -77,8 +81,17 @@ aoj_connect = () ->
         pr = "#{s.lessonID}_#{pr}"
       ref = "#{aoj_review_url}?rid=#{s.runID}"
       res.send "#{ic} #{id} got #{rc} for #{pr}(#{ref})"
+    debug("#{id} is in watchlist?")
     if watchlist[id]
+      debug("#{id} is in watchlist")
       sendmsg(r) for r in watchlist[id]
+    else if res_for_all
+      debug("ALL-MODE is enabled.  Adding #{id} into watchlist")
+      register id, res_for_all, 'verbose'
+    else
+      debug("#{id} is NOT in watchlist.  Now my watchlist is:")
+      debug("  #{user}") for user, resarr of watchlist
+  debug('registering close, error, open actions')
   aoj.on 'close', aoj_onclose
   aoj.on 'error', aoj_onerror
   aoj.on 'open', aoj_onopen
@@ -86,6 +99,7 @@ aoj_connect = () ->
 aoj_connect()
 
 memberp = (array, fn) ->
+  debug("memberp() called with: #{array}");
   return true for item in array when fn(item)
   return false
 
@@ -151,6 +165,10 @@ brain_del = (room, user) ->
   catch error
     logger.error "JSON parse error (reason: #{error}"
 
+res_for_all = null
+allmode_on = (res) ->
+  res_for_all = res
+
 module.exports = (robot) ->
   logger = robot.logger
   brain = robot.brain
@@ -160,10 +178,12 @@ module.exports = (robot) ->
     brain_onloaded robot
 
   robot.respond /aoj reconnect/, (res) ->
+    debug("requested to reconnect")
     res.send "Reconnecting..."
     aoj.close()
 
   robot.respond /aoj watch (.*)/, (res) ->
+    debug("watch for #{res.match[1]}")
     register res.match[1], res, 'verbose'
 
   robot.respond /aoj unwatch (.*)/, (res) ->
@@ -175,3 +195,29 @@ module.exports = (robot) ->
     res.send msg
 
   robot.hear /.*/, roomcheck
+
+  # for debug
+  robot.respond /aoj watchall/, (res) ->
+    res.send "I'll watch for all status"
+    allmode_on res
+
+  robot.respond /aoj dump brain/, (res) ->
+    try
+      data = JSON.parse brain.get "hubot-aoj-status"
+      if data
+        msg = "here is data for AOJ:"
+        msg = "#{msg}\n  #{user.split("").join(" ")}   \tat #{room}" for user,_ of users for room,users of data
+        res.send msg
+      else
+        res.send "No data for AOJ in my brain"
+    catch error
+      logger.error "JSON parse error (reason: #{error}"
+
+  robot.respond /aoj clear brain/, (res) ->
+    res.send "I'll clear all data for AOJ on my brain"
+    brain.set "hubot-aoj-status", null
+
+  robot.respond /aoj dump watchlist/, (res) ->
+    msg = "AOJ watchlist:"
+    msg = "#{msg}\n  #{user.split("").join(" ")}   \tat #{r && r.message && r.message.room}" for r in res_array for user, res_array of watchlist
+    res.send msg
