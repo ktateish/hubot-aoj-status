@@ -71,3 +71,8 @@ module.exports = (robot) ->
 
   robot.respond /aoj watch (.*)/, (res) ->
     register res
+
+  robot.respond /aoj list/, (res) ->
+    msg = "I'm watching:"
+    msg = "#{msg}\n  #{user.split("").join(" ")}" for user, _ of watchlist
+    res.send msg
