@@ -12,6 +12,8 @@
 
 ws = require('ws')
 
+logger = () ->	# will be robot.logger
+
 aoj_status = [
   'CE'
   'WA'
@@ -27,6 +29,21 @@ aoj_status = [
 aoj_review_url='http://judge.u-aizu.ac.jp/onlinejudge/review.jsp'
 watchlist = {}
 aoj = null
+
+aoj_onclose = (code, msg) ->
+  logger.info "[AOJ] Connection to ionazn.org has been closed(#{code}): #{msg}"
+  logger.info "[AOJ] Reconnecting in 3 seconds"
+  setTimeout aoj_connect, 3000
+
+aoj_onerror = (error) ->
+  logger.error "[AOJ] Error on underlying socket: #{error}"
+
+aoj_pingloop = () ->
+  aoj.ping('ping')
+  setTimeout aoj_pingloop, 60000
+
+aoj_onopen = () ->
+  aoj_pingloop()
 
 aoj_connect = () ->
   aoj = new ws('ws://ionazn.org/status')
@@ -45,8 +62,9 @@ aoj_connect = () ->
       res.send "#{ic} #{id} got #{rc} for #{pr}(#{ref})"
     if watchlist[id]
       sendmsg(r) for r in watchlist[id]
-  aoj.on 'close', (code, msg) ->
-    setTimeout aoj_connect, 3000
+  aoj.on 'close', aoj_onclose
+  aoj.on 'error', aoj_onerror
+  aoj.on 'open', aoj_onopen
 
 aoj_connect()
 
@@ -65,6 +83,8 @@ register = (res) ->
     res.send "I'll watch #{user}'s judge results on AOJ"
 
 module.exports = (robot) ->
+  logger = robot.logger
+
   robot.respond /aoj reconnect/, (res) ->
     res.send "Reconnecting..."
     aoj.close()
