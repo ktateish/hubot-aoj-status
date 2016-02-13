@@ -45,7 +45,7 @@ aoj_connect = () ->
       res.send "#{ic} #{id} got #{rc} for #{pr}(#{ref})"
     if watchlist[id]
       sendmsg(r) for r in watchlist[id]
-  aoj.on 'close', () ->
+  aoj.on 'close', (code, msg) ->
     setTimeout aoj_connect, 3000
 
 aoj_connect()
