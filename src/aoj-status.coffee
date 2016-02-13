@@ -26,6 +26,18 @@ aoj_status = [
   'PE'
   'Running'
   ]
+aoj_stat_icon = [
+  ':shit:'
+  ':skull:'
+  ':clock9:'
+  ':boom:'
+  ':smile:'
+  ':hourglass_flowing_sand:'
+  ':pizza:'
+  ':no_entry:'
+  ':interrobang:'
+  ':runner:'
+]
 aoj_review_url='http://judge.u-aizu.ac.jp/onlinejudge/review.jsp'
 watchlist = {}
 aoj = null
@@ -54,7 +66,7 @@ aoj_connect = () ->
     if rc == 'Waiting' || rc == 'Running'
       return
     sendmsg = (res) ->
-      ic = if rc == 'AC' then ':smile:' else ':fearful:'
+      ic = aoj_stat_icon[s.status]
       pr = "#{s.problemID}: [#{s.problemTitle}]"
       if s.lessonID
         pr = "#{s.lessonID}_#{pr}"
