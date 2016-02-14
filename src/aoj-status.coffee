@@ -86,10 +86,11 @@ aoj_connect = () ->
 aoj_connect()
 
 memberp = (array, fn) ->
-  if fn(item) then item else null for item in array
+  return true for item in array when fn(item)
+  return false
 
 register = (user, res, verbose=false) ->
-  if watchlist[user] && memberp(watchlist[user], (obj) -> obj.message.room == res.message.room)
+  if watchlist[user] && memberp(watchlist[user], (obj) -> obj && obj.message && obj.message.room == res.message.room)
     if verbose
       res.send "I'm already watching #{user.split("").join(" ")}'s judge results on AOJ"
   else
