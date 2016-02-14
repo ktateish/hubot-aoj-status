@@ -13,6 +13,11 @@
 ws = require('ws')
 
 logger = () ->	# will be robot.logger
+brain = {  	# will be robot.brain
+  get:() ->
+  set:() ->
+}
+
 
 aoj_status = [
   'CE'
@@ -83,28 +88,78 @@ aoj_connect()
 memberp = (array, fn) ->
   if fn(item) then item else null for item in array
 
-register = (res) ->
-  user = res.match[1]
+register = (user, res, verbose=false) ->
   if watchlist[user] && memberp(watchlist[user], (obj) -> obj.message.room == res.message.room)
-    res.send "I'm already watching #{user.split("").join(" ")}'s judge results on AOJ"
+    if verbose
+      res.send "I'm already watching #{user.split("").join(" ")}'s judge results on AOJ"
   else
     if watchlist[user]
       watchlist[user].push(res)
     else
       watchlist[user] = [res]
-    res.send "I'll watch #{user}'s judge results on AOJ"
+    brain_add res.message.room, user
+    if verbose
+      res.send "I'll watch #{user}'s judge results on AOJ"
+
+room2user = null
+brain_loaded = false
+brain_onloaded = () ->
+  if !brain_loaded
+    try
+      room2user = JSON.parse brain.get "hubot-aoj-status"
+    catch error
+      logger.error "JSON parse error (reason: #{error}"
+  if !room2user
+    room2user = {}
+  brain_loaded = true
+
+roomcheck = (res) ->
+  room = res.message.room
+  if !room2user[room]
+    return
+  register u, res for u, _ of room2user[room]
+  delete room2user[room]
+
+brain_add = (room, user) ->
+  try
+    r2u = JSON.parse brain.get "hubot-aoj-status"
+    if !r2u
+      r2u = {}
+    if !r2u[room]
+      r2u[room] = {}
+    r2u[room][user] = true
+    brain.set "hubot-aoj-status", JSON.stringify r2u
+  catch error
+    logger.error "JSON parse error (reason: #{error}"
+
+brain_del = (room, user) ->
+  try
+    r2u = JSON.parse brain.get "hubot-aoj-status"
+    if !r2u or !r2u[room]
+      return
+    delete r2u[room][user]
+    brain.set "hubot-aoj-status", JSON.stringify r2u
+  catch error
+    logger.error "JSON parse error (reason: #{error}"
 
 module.exports = (robot) ->
   logger = robot.logger
+  brain = robot.brain
+  brain_data = {}
+
+  robot.brain.on 'loaded', () ->
+    brain_onloaded robot
 
   robot.respond /aoj reconnect/, (res) ->
     res.send "Reconnecting..."
     aoj.close()
 
   robot.respond /aoj watch (.*)/, (res) ->
-    register res
+    register res.match[1], res, 'verbose'
 
   robot.respond /aoj list/, (res) ->
     msg = "I'm watching:"
     msg = "#{msg}\n  #{user.split("").join(" ")}" for r in res_array when r.message.room == res.message.room for user, res_array of watchlist
     res.send msg
+
+  robot.hear /.*/, roomcheck
