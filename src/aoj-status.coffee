@@ -106,5 +106,5 @@ module.exports = (robot) ->
 
   robot.respond /aoj list/, (res) ->
     msg = "I'm watching:"
-    msg = "#{msg}\n  #{user.split("").join(" ")}" for user, _ of watchlist
+    msg = "#{msg}\n  #{user.split("").join(" ")}" for r in res_array when r.message.room == res.message.room for user, res_array of watchlist
     res.send msg
