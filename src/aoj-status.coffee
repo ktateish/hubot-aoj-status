@@ -102,6 +102,14 @@ register = (user, res, verbose=false) ->
     if verbose
       res.send "I'll watch #{user}'s judge results on AOJ"
 
+unregister = (user, res) ->
+  if watchlist[user] && memberp(watchlist[user], (obj) -> obj && obj.message && obj.message.room == res.message.room)
+    watchlist[user] = watchlist[user].filter (obj) -> obj && obj.message && obj.message.room != res.message.room
+    brain_del res.message.room, user
+    res.send "I'll drop #{user} from watch list"
+  else
+    res.send "I'm not watching #{user.split("").join(" ")}"
+
 room2user = null
 brain_loaded = false
 brain_onloaded = () ->
@@ -157,6 +165,9 @@ module.exports = (robot) ->
 
   robot.respond /aoj watch (.*)/, (res) ->
     register res.match[1], res, 'verbose'
+
+  robot.respond /aoj unwatch (.*)/, (res) ->
+    unregister res.match[1], res
 
   robot.respond /aoj list/, (res) ->
     msg = "I'm watching:"
