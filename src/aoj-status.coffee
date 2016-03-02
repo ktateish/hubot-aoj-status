@@ -72,7 +72,7 @@ aoj_connect = () ->
     id = s.userID
     rc = aoj_status[s.status]
     debug("#{id}'s status(=#{rc}) has come")
-    if rc == 'Waiting' || rc == 'Running'
+    if rc != 'AC'
       return
     sendmsg = (res) ->
       ic = aoj_stat_icon[s.status]
