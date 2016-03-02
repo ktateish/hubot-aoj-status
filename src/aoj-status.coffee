@@ -68,7 +68,7 @@ aoj_connect = () ->
     s = JSON.parse(data)
     id = s.userID
     rc = aoj_status[s.status]
-    if rc == 'Waiting' || rc == 'Running'
+    if rc != 'AC'
       return
     sendmsg = (res) ->
       ic = aoj_stat_icon[s.status]
